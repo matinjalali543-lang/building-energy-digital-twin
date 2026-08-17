@@ -96,15 +96,36 @@ likely to read it. The optimizer therefore ships with an explicit
 `cost_energy` objective variant that prices kWh alongside euros, and both
 numbers are reported side by side everywhere.
 
-## F. The battery is secondary, and is benchmarked against the walls (§5)
+## F. The battery was meant to be secondary. It is not.
 
-§5 lists the BESS as optional. It is included, but the building's thermal mass
-is the primary storage asset and the two are compared directly: across its 3 K
-comfort band the fabric stores about **750 kWh-thermal, roughly 250 kWh-electric
-at COP 3** — comparable to a large commercial battery, and already paid for.
+**The plan was wrong here, and the measurement is what corrected it.**
 
-Making the battery co-equal would have restated the sibling repo; omitting it
-would have left the comparison unmade.
+The reasoning going in: across its 3 K comfort band the fabric stores about 750
+kWh-thermal, roughly 250 kWh-electric at COP 3 — comparable to a large
+commercial battery, and already paid for. The battery was therefore included as
+a secondary asset, mainly so the two could be compared.
+
+The scenario sweep says the opposite. Removing the battery entirely collapses
+the MPC saving from **428 EUR (7.30%) to 57 EUR (0.98%)**, and doubling it lifts
+the saving to **720 EUR (12.27%)**. So roughly **87% of the value comes from the
+battery and 13% from the thermal mass.**
+
+Why the stored-energy comparison misled: the two stores are not
+interchangeable. Energy parked in the fabric can only be moved within the
+comfort band, and shifting it *raises envelope losses* — the cost-minimising
+controller uses 20% more HVAC electricity than the thermostat precisely because
+pre-heating and pre-cooling widen temperature excursions. A battery loses only
+its round-trip efficiency. Equal nameplate storage, very unequal usable
+flexibility.
+
+The comparison is kept and reported, because a wrong prediction that was
+measured and corrected is more useful than one that was never tested. The
+`no battery` and `battery doubled` scenarios exist to make it reproducible.
+
+One thing the fabric *does* buy cheaply: widening the comfort band by 1 K either
+side is worth 469 EUR (8.26%) and simultaneously **cuts** HVAC energy from 26.2
+to 20.5 MWh — the only lever in the sweep that improves cost and consumption
+together.
 
 ## G. Anomalies are scored, not just surfaced (§12)
 

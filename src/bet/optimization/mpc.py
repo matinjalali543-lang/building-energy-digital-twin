@@ -134,8 +134,11 @@ def run_mpc(
         if plan is None or plan_age >= resolve_every:
             end = min(step + lookahead, len(drivers))
             window = drivers.iloc[step:end]
-            if len(window) < 2:
+            if window.empty:
                 break
+            # A single-row horizon is myopic but solvable. Requiring two rows
+            # silently truncated every run by one interval, which showed up as
+            # two otherwise-identical runs covering 71 and 72 steps.
 
             if forecasters is not None and history is not None:
                 window = _apply_forecasts(window, forecasters, history, plant, step)
