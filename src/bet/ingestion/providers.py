@@ -184,3 +184,47 @@ def sensors_for(building: Building) -> tuple[str, ...]:
     declared = {sensor.entity_id for sensor in building.sensors}
     declared |= {meter.sensor_id for meter in building.meters if meter.sensor_id}
     return tuple(sensor for sensor in SENSOR_SOURCES if sensor in declared)
+
+
+def record_telemetry(
+    plant,
+    controller,
+    provider: PlantStreamProvider | None = None,
+    sensors: tuple[str, ...] | None = None,
+    store=None,
+) -> pd.DataFrame:
+    """Run a plant and return **what the twin observed**, not what happened.
+
+    The distinction is the whole point of the plant/twin wall. Reading
+    `plant.history_frame()` gives the building's exact internal state; a real
+    twin never has that. This returns the noisy, occasionally-missing view the
+    instruments produced, which is what residuals and anomaly detection must be
+    computed from.
+
+    Control actions are included because the twin genuinely knows them — it
+    issued them — and the thermal model cannot be identified without them.
+    """
+    from bet.twin.state import TwinStateStore
+
+    provider = provider or PlantStreamProvider()
+    store = store or TwinStateStore()
+    sensors = sensors or tuple(SENSOR_SOURCES)
+
+    rows = []
+    while not plant.finished:
+        reading = plant.step(controller.act(plant))
+        observed = plant.observe(reading) if hasattr(plant, "observe") else reading
+        store.apply_many(provider.observe(observed, sensors))
+        state = store.advance_to(observed.timestamp)
+
+        row = {"timestamp": observed.timestamp}
+        for field_name, field_state in state.fields.items():
+            row[field_name] = field_state.value if field_state.quality.usable else np.nan
+        # Commanded, not measured: the controller issued it, so the twin has it
+        # exactly. Occupancy likewise comes from the schedule, not a sensor.
+        row["hvac_thermal_kw"] = reading.hvac_thermal_kw
+        row["occupancy_fraction"] = reading.occupancy_fraction
+        row["price_eur_mwh"] = reading.price_eur_mwh
+        rows.append(row)
+
+    return pd.DataFrame(rows).set_index("timestamp")
