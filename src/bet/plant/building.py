@@ -202,6 +202,14 @@ class BuildingSpec:
     plug_gain_w_m2: float = 12.0
     # Fraction of lighting and plug load that persists overnight.
     base_load_fraction: float = 0.15
+    # Day-to-day variability in lighting and plug load, as a standard deviation
+    # of a multiplicative factor. Not decoration: with it set to zero the base
+    # load is an exact function of the calendar, and a forecaster with
+    # hour-of-day features predicts it with R^2 = 1.0000 and MAE = 0.0000.
+    # That is an artefact of a noiseless simulator, not a fact about buildings,
+    # and reporting it would look indistinguishable from a leak. Real plug and
+    # lighting loads move with headcount, weather and what people are doing.
+    load_variability: float = 0.12
 
     pv_capacity_kwp: float = 250.0
     grid_import_limit_kw: float = 600.0
@@ -234,6 +242,10 @@ class BuildingSpec:
         if not 0 <= self.base_load_fraction <= 1:
             raise ValueError(
                 f"base_load_fraction must be in [0, 1], got {self.base_load_fraction}"
+            )
+        if not 0 <= self.load_variability < 1:
+            raise ValueError(
+                f"load_variability must be in [0, 1), got {self.load_variability}"
             )
         # A time constant under an hour would make hourly simulation meaningless:
         # the building would reach equilibrium inside a single step, and the

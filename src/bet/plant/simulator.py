@@ -237,6 +237,28 @@ class Plant:
         self._occupancy = occupancy_fraction(drivers.index, spec)
         self._gain_kw = internal_gain_kw(self._occupancy, spec)
         self._base_kw = electrical_base_load_kw(self._occupancy, spec)
+
+        # Real plug and lighting loads are not an exact function of the clock.
+        # A per-day level shift plus mild hourly jitter, seeded so the plant is
+        # reproducible. Without this the base load is perfectly forecastable and
+        # every residual against it is identically zero -- which would leave the
+        # anomaly detector nothing to work with and make the forecasting numbers
+        # meaningless.
+        variability = getattr(spec, "load_variability", 0.0)
+        if variability > 0:
+            days = drivers.index.floor("D")
+            unique_days = days.unique()
+            daily = self.rng.normal(1.0, variability, len(unique_days))
+            per_day = pd.Series(daily, index=unique_days).reindex(days).to_numpy()
+            hourly = self.rng.normal(1.0, variability / 3.0, len(drivers))
+            factor = np.clip(per_day * hourly, 0.4, 1.8)
+            self._base_kw = self._base_kw * factor
+            # Lighting and equipment heat is the same physical load, so the
+            # thermal gain has to move with it or the two would disagree.
+            lit_share = (spec.lighting_gain_w_m2 + spec.plug_gain_w_m2) / (
+                spec.people_gain_w_m2 + spec.lighting_gain_w_m2 + spec.plug_gain_w_m2
+            )
+            self._gain_kw = self._gain_kw * (1 - lit_share + lit_share * factor)
         # PV scales linearly with array size; the driver file is for the spec's
         # nominal rating, so a scenario that changes it rescales here.
         self._pv_scale = spec.pv_capacity_kwp / 250.0
