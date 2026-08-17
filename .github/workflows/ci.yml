@@ -1,0 +1,61 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      # HiGHS via the highspy wheel handles the control MILP -- one mode binary
+      # per interval, 24 for a day-ahead horizon. No conda, no Ipopt.
+      - name: Install package
+        run: pip install -e ".[dev,solvers,viz]"
+
+      - name: Lint with ruff
+        run: ruff check src tests app data
+
+      # The suite runs entirely on synthetic driver windows: no network, and no
+      # need for the 130 MB OPSD snapshot. The few tests that assert something
+      # about the committed dataset skip cleanly if it is absent.
+      - name: Run tests
+        run: pytest -v
+
+      - name: Streamlit app syntax smoke test
+        run: python -m py_compile app/streamlit_app.py
+
+      # Cheap guard against the pipeline breaking without a test noticing.
+      - name: Import and pipeline smoke test
+        run: |
+          python -c "
+          from bet.data import load_drivers, split
+          from bet.plant.building import REFERENCE_BUILDING
+          from bet.plant.controllers import ThermostatController, run_controller
+          from bet.plant.simulator import Plant
+          drivers = split(load_drivers(), 'test')[:72]
+          result = run_controller(ThermostatController(REFERENCE_BUILDING),
+                                  Plant(REFERENCE_BUILDING, drivers))
+          assert result.total_cost_eur > 0
+          print(result.summary())
+          "
+
+      # The building's parameters must stay inside published office benchmarks.
+      # A change that quietly makes the simulated building implausible should
+      # fail here rather than in a reader's head.
+      - name: Building calibration stays inside published ranges
+        run: python -m bet.plant.calibration
