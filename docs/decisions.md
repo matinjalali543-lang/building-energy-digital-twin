@@ -50,25 +50,39 @@ without indoor temperature there is no thermal state to twin, which would leave
 the comfort-constrained control that distinguishes this project impossible to
 build.
 
-## D. The HVAC model needs a binary; the battery model did not
+## D. The HVAC model needs a binary — but far less than first measured
 
-This is the one modelling decision that came from a measurement rather than
-judgement, and it is worth stating precisely because a sibling repo reached the
-opposite conclusion.
+This decision changed once it was tested against the tariff the model actually
+uses, and the correction is recorded rather than quietly folded in.
 
-In `forecast-driven-bess-dispatch`, a constraint forbidding simultaneous
-charging and discharging was shown to be unnecessary: round-trip losses already
-made it wasteful, so the optimum never did it and the constraint never bound.
+**What the planning probe found.** Priced at raw wholesale, the LP relaxation
+heats and cools in the same hour **201 times a year, 200 of them in
+negative-price hours**. Paid to consume, it runs heater against chiller to burn
+electricity. That looked like a sharp contrast with the sibling battery repo,
+where the equivalent constraint was shown to be unnecessary.
 
-Here the equivalent constraint **does** bind. A probe on real 2019 prices found
-the LP relaxation heating and cooling in the same hour **201 times a year — 200
-of those hours had a negative price**. Paid to consume, the model runs the
-heater and the chiller against each other to burn energy. Capping total HVAC
-electrical power bounds the damage but leaves 166 such hours; a mode binary
-removes all 201.
+**What the built model shows.** The probe used raw wholesale as the delivered
+price. The reference tariff adds a 60 EUR/MWh markup for network charges and
+levies, and that changes the picture substantially:
 
-So this model is a MILP, and the binary is load-bearing. `docs/formulation.md`
-carries the numbers and a test pins the behaviour.
+| Import markup | Hours with negative delivered price | Relaxation violations |
+|---:|---:|---:|
+| 0 EUR/MWh | 211 | 201 |
+| 30 EUR/MWh | 45 | — |
+| **60 EUR/MWh (reference)** | **15** | **3** |
+
+Solving all 364 whole days of 2019 at the reference tariff, the relaxation
+misbehaves in **3 hours** and the binary is worth **0.41 EUR across the year**.
+
+So the binary is retained — it is physically correct, a single reversible unit
+cannot heat and cool at once, and it costs nothing at this size — but the claim
+that it is load-bearing holds only for a pure wholesale pass-through tariff, or
+for a market with deeper and more frequent negative prices than Germany saw in
+2019. The contrast with the sibling repo is real and much smaller than first
+stated.
+
+The test suite pins the behaviour at zero markup, where the effect is large
+enough to be unambiguous.
 
 ## E. Cost-optimal is not energy-optimal (§14)
 
