@@ -1,0 +1,65 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "building-energy-twin"
+version = "0.1.0"
+description = "A digital twin of a commercial building: stateful thermal model, telemetry ingestion, forecasting, fault detection, scenario simulation and comfort-constrained MPC with Pyomo"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Ahmad" }]
+keywords = [
+    "digital-twin", "building-energy", "model-predictive-control", "pyomo",
+    "optimization", "hvac", "anomaly-detection", "thermal-storage",
+]
+
+dependencies = [
+    "pyomo>=6.7",
+    "numpy>=1.26",
+    "pandas>=2.1",
+    "scikit-learn>=1.4",
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+solvers = [
+    # HiGHS solves the control MILP. The HVAC mode binary is not optional --
+    # see docs/formulation.md for the measurement that forced it.
+    "highspy>=1.7",
+]
+viz = [
+    "matplotlib>=3.8",   # committed README figures, must render headless
+    "plotly>=5.20",      # interactive dashboard charts
+    "streamlit>=1.35",
+]
+boost = [
+    "xgboost>=2.0",
+]
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.5",
+]
+notebooks = [
+    "jupyter>=1.0",
+    "nbformat>=5.9",
+    "nbconvert>=7.10",
+    "ipykernel>=6.29",
+]
+
+[project.urls]
+Repository = "https://github.com/Ahmadmohammadip/building-energy-digital-twin"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

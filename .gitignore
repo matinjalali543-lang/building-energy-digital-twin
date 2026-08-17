@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# Raw downloads (130 MB OPSD snapshot, PVGIS JSON) are reproducible via
+# data/download_weather.py and data/download_prices.py
+data/raw/
+# results/ holds small reproducible evidence tables and IS tracked.
