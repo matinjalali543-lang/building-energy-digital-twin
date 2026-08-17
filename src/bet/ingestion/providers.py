@@ -214,7 +214,10 @@ def record_telemetry(
     while not plant.finished:
         reading = plant.step(controller.act(plant))
         observed = plant.observe(reading) if hasattr(plant, "observe") else reading
-        store.apply_many(provider.observe(observed, sensors))
+        batch = provider.observe(observed, sensors)
+        if hasattr(plant, "corrupt_measurements"):
+            batch = plant.corrupt_measurements(batch)
+        store.apply_many(batch)
         state = store.advance_to(observed.timestamp)
 
         row = {"timestamp": observed.timestamp}

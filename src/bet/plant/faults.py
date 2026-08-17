@@ -263,6 +263,7 @@ class FaultyPlant(Plant):
         super().__init__(spec, drivers, **kwargs)
         self.schedule = schedule or FaultSchedule()
         self._last_observed_temp: float | None = None
+        self._held_measurements: dict[str, float] = {}
 
     def step(self, action: ControlAction) -> PlantReading:
         timestamp = self.state.timestamp
@@ -303,6 +304,45 @@ class FaultyPlant(Plant):
         finally:
             self.spec = original_spec
             self._pv_scale = original_scale
+
+    def corrupt_measurements(self, batch: list) -> list:
+        """Apply sensor faults to the measurements a provider has already made.
+
+        Order matters and this is the correct one. A stuck sensor freezes the
+        value it last *reported* -- noise and all -- so it must be applied after
+        the instrument noise, not before. Applying it first produced a stuck
+        value with fresh noise added each hour, which is statistically identical
+        to a healthy sensor and which no flatline detector could ever catch.
+        """
+        from dataclasses import replace as _replace
+
+        if not batch:
+            return batch
+        timestamp = batch[0].timestamp
+        sensor_faults = [
+            f for f in self.schedule.active_at(timestamp) if f.kind == "sensor"
+        ]
+        if not sensor_faults:
+            self._held_measurements = {m.sensor_id: m.value for m in batch}
+            return batch
+
+        out = []
+        for measurement in batch:
+            value = measurement.value
+            for fault in sensor_faults:
+                level = fault.intensity(timestamp)
+                if (
+                    fault.name == "stuck_temperature_sensor"
+                    and measurement.sensor_id == "sensor_zone_temp"
+                ):
+                    value = self._held_measurements.get("sensor_zone_temp", value)
+                elif fault.name == "meter_drift" and measurement.sensor_id in (
+                    "sensor_grid_power",
+                    "sensor_hvac_power",
+                ):
+                    value = value * (1 + level)
+            out.append(_replace(measurement, value=value))
+        return out
 
     def observe(self, reading: PlantReading) -> PlantReading:
         """Degrade a true reading into what the instruments report."""
