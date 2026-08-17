@@ -1,0 +1,8 @@
+quantity,unit,measured,low,high,within,source
+electricity intensity,kWh/m2/yr,104.78,70.0,250.0,True,CIBSE TM46 / typical EU office electricity benchmarks
+peak electrical demand,W/m2,41.0,20.0,80.0,True,typical office peak demand density
+HVAC share of electricity,%,20.3,15.0,55.0,True,HVAC is usually the largest single end use in an air-conditioned office
+thermal time constant,h,50.0,10.0,150.0,True,lightweight to heavyweight construction
+PV yield,kWh/kWp/yr,1093.51,800.0,1300.0,True,"central and northern Europe, fixed tilt"
+PV share of consumption,%,34.79,5.0,60.0,True,rooftop array on an office of this size
+load factor,-,0.29,0.25,0.75,True,mean over peak demand for a scheduled commercial building
