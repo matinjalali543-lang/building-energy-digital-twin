@@ -239,19 +239,24 @@ dataclasses that fail loudly at construction, a builder that never touches raw
 files, and a result dataclass rather than a live model — but sharing no code.
 
 - [economic-dispatch-pyomo](https://github.com/Ahmadmohammadip/economic-dispatch-pyomo)
-  — multi-period, multi-bus DC-OPF with ramping, curtailable renewables and LMPs.
+  — multi-period, multi-bus DC-OPF economic dispatch with generator
+  ramping, curtailable renewables, storage, and locational marginal prices.
 - [battery-storage-optimization-pyomo](https://github.com/Ahmadmohammadip/battery-storage-optimization-pyomo)
-  — wholesale arbitrage co-optimized with frequency regulation as a single LP.
+  — battery energy arbitrage co-optimized with frequency regulation
+  capacity (revenue stacking) as a single LP.
 - [cvrp-optimization-pyomo](https://github.com/Ahmadmohammadip/cvrp-optimization-pyomo)
-  — exact MILP for the Capacitated Vehicle Routing Problem, with a measured
-  benchmark of where exact methods stop scaling.
+  — exact MILP for the Capacitated Vehicle Routing Problem, with a
+  measured benchmark of where exact methods stop scaling.
 - [supply-chain-network-optimization-pyomo](https://github.com/Ahmadmohammadip/supply-chain-network-optimization-pyomo)
-  — multi-echelon network design and production-distribution planning as one MILP.
+  — multi-echelon network design and production-distribution-inventory
+  planning as one MILP: which plants and warehouses to open, and how to
+  run them.
 - [forecast-driven-bess-dispatch](https://github.com/Ahmadmohammadip/forecast-driven-bess-dispatch)
-  — ML forecasts driving a behind-the-meter battery, measuring what the forecast
-  is worth. **The closest sibling to this repo**: there the state is a battery's
-  charge and the hard part is predicting price; here the state is a building's
-  temperature and the hard part is identifying the physics.
+  — ML forecasts of load, PV and price feeding a Pyomo dispatch LP for a
+  behind-the-meter battery, measuring what the forecast is actually worth.
+  **The closest sibling to this repo**: there the state is a battery's
+  charge and the hard part is predicting price; here the state is a
+  building's temperature and the hard part is identifying the physics.
 
 ## License
 
