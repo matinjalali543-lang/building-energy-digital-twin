@@ -49,7 +49,7 @@ notebooks = [
 ]
 
 [project.urls]
-Repository = "https://github.com/Ahmadmohammadip/building-energy-digital-twin"
+Repository = "https://github.com/matinjalali543-lang/building-energy-digital-twin"
 
 [tool.setuptools.packages.find]
 where = ["src"]
